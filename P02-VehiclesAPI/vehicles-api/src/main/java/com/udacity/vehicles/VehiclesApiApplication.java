@@ -3,10 +3,12 @@ package com.udacity.vehicles;
 import com.udacity.vehicles.domain.manufacturer.Manufacturer;
 import com.udacity.vehicles.domain.manufacturer.ManufacturerRepository;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.client.loadbalancer.reactive.LoadBalancerExchangeFilterFunction;
 import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
@@ -21,6 +23,11 @@ import org.springframework.web.reactive.function.client.WebClient;
 @EnableJpaAuditing
 @EnableEurekaClient
 public class VehiclesApiApplication {
+
+
+    // Credit: "Talk about WebClient's LoadBalance support" http://www.programmersought.com/article/5385639834/;jsessionid=C6C72E5BDA5A2883D27B24D5E7412D4E
+    @Autowired
+    private LoadBalancerExchangeFilterFunction lbFunction;
 
     public static void main(String[] args) {
         SpringApplication.run(VehiclesApiApplication.class, args);
@@ -64,7 +71,7 @@ public class VehiclesApiApplication {
      */
     @Bean(name="pricing")
     public WebClient webClientPricing(@Value("${pricing.endpoint}") String endpoint) {
-        return WebClient.create(endpoint);
+        return WebClient.builder().filter(lbFunction).baseUrl(endpoint).build();
     }
 
 }
